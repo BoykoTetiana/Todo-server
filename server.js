@@ -10,9 +10,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Підключаємо всі маршрути до запуску сервера!
 const todoRoutes = require('./routes/todos');
+const authRoutes = require('./routes/auth');
 app.use('/api/todos', todoRoutes);
+app.use('/api', authRoutes);
 
 // MongoDB
 mongoose.connect(process.env.MONGODB_URI)
@@ -23,4 +25,3 @@ mongoose.connect(process.env.MONGODB_URI)
     });
   })
   .catch(err => console.error('❌ Mongo error:', err));
-
