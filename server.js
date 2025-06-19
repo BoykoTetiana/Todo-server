@@ -10,13 +10,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Підключаємо всі маршрути до запуску сервера!
+// Підключаємо всі маршрути
 const todoRoutes = require('./routes/todos');
 const authRoutes = require('./routes/auth');
-app.use('/api/todos', todoRoutes);
-app.use('/api', authRoutes);
 
-// MongoDB
+app.use('/api/todos', todoRoutes);
+app.use('/api', authRoutes); // ✅ це лишаємо
+
+// Підключення до MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
@@ -25,3 +26,4 @@ mongoose.connect(process.env.MONGODB_URI)
     });
   })
   .catch(err => console.error('❌ Mongo error:', err));
+

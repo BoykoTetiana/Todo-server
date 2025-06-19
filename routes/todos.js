@@ -1,24 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const Todo = require('../models/Todo');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// GET усі тудушки
+// ВСІ маршрути тепер захищені middleware
+router.use(authMiddleware);
+
+// GET — всі тудушки поточного юзера
 router.get('/', async (req, res) => {
   try {
-    const todos = await Todo.find();
+    const todos = await Todo.find({ userId: req.user.userId });
     res.json(todos);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST — додати нову тудушку
+// POST — додати нову тудушку для поточного юзера
 router.post('/', async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'Text is required' });
 
-    const newTodo = new Todo({ text });
+    const newTodo = new Todo({ text, userId: req.user.userId });
     const savedTodo = await newTodo.save();
     res.status(201).json(savedTodo);
   } catch (err) {
@@ -26,26 +30,28 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT — оновити тудушку за id
+// PUT — оновити тудушку за id, тільки якщо вона належить користувачу
 router.put('/:id', async (req, res) => {
   try {
-    const updatedTodo = await Todo.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!updatedTodo) return res.status(404).json({ error: 'Todo not found' });
+    const todo = await Todo.findOne({ _id: req.params.id, userId: req.user.userId });
+    if (!todo) return res.status(404).json({ error: 'Todo not found' });
+
+    todo.text = req.body.text ?? todo.text;
+    todo.done = req.body.done ?? todo.done;
+    const updatedTodo = await todo.save();
+
     res.json(updatedTodo);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE — видалити тудушку за id
+// DELETE — видалити тудушку за id, тільки якщо вона належить користувачу
 router.delete('/:id', async (req, res) => {
   try {
-    const deletedTodo = await Todo.findByIdAndDelete(req.params.id);
-    if (!deletedTodo) return res.status(404).json({ error: 'Todo not found' });
+    const todo = await Todo.findOneAndDelete({ _id: req.params.id, userId: req.user.userId });
+    if (!todo) return res.status(404).json({ error: 'Todo not found' });
+
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
